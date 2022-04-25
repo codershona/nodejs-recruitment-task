@@ -22,4 +22,13 @@ jobs:
           paths:
             - .
 
-
+workflows:
+  build-and-test:
+    jobs:
+      - build:
+          filters:
+            branches:
+              only:
+                - feature-1
+                - master
+                - main
