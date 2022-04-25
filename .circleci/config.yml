@@ -1,46 +1,25 @@
-# This config is equivalent to both the '.circleci/extended/orb-free.yml' and the base '.circleci/config.yml'
 version: 2.1
+orbs:
+  node: circleci/node@4.7.0
 jobs:
-  build:
+  build_and_test:
     docker:
-      - image: node:17.2.0
-      - image: circleci/node@4.7
-        environment:
-          MONGO_PROD_URI: "mongodb+srv://movie-api-islam:nodeislam@cluster0.ovd64.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"
-      - image: mongo:latest
-
-    working_directory: ~/repo
-
+      - image: cimg/node:17.2.0
+    env:
+      JWT_SECRET: secret
     steps:
       - checkout
-
-      # Download and cache dependencies
-      - restore_cache:
-          keys:
-            - v1-dependencies-{{ checksum "package.json" }}
-            # fallback to using the latest cache if no exact match is found
-            - v1-dependencies-
-
-      - run: npm install
-
-      - save_cache:
-          paths:
-            - node_modules
-          key: v1-dependencies-{{ checksum "package.json" }}
-
-      # run tests!
-      - run: npm ci:test
-
-      - setup_remote_docker:
-          docker_layer_caching: true
-
+      - node/install-packages:
+          pkg-manager: npm
       - run:
-          name: Install Docker client
-          command: |
-            set -x
-            VER="18.06.3-ce"
-            curl -L -o /tmp/docker-$VER.tgz https://download.docker.com/linux/static/stable/x86_64/docker-$VER.tgz
-            tar -xz -C /tmp -f /tmp/docker-$VER.tgz
-            mv /tmp/docker/* /usr/bin
-      - run: npm ci:docker
+          command: npm test
+          name: Run tests
+      - run:
+          command: npm build
+          name: Build app
+      - persist_to_workspace:
+          root: ~/project
+          paths:
+            - .
+
 
